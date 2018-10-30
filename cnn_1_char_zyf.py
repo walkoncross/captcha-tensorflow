@@ -8,8 +8,15 @@ import tensorflow as tf
 
 import datasets.base as input_data
 
-MAX_STEPS = 10000
-BATCH_SIZE = 50
+# MAX_STEPS = 10000
+# TRAIN_BATCH_SIZE = 50
+# TEST_BATCH_SIZE = 2000
+
+MAX_STEPS = 8000
+TRAIN_BATCH_SIZE = 512
+
+TEST_BATCH_SIZE = 2000
+TEST_STEPS = 6
 
 LOG_DIR = 'log/cnn1-run-%s' % datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -71,7 +78,7 @@ def main(_):
         x = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH])
         y_ = tf.placeholder(tf.float32, [None, LABEL_SIZE])
 
-        # must be 4-D with shape `[batch_size, height, width, channels]`
+        # must be 4-D with shape `[TRAIN_BATCH_SIZE, height, width, channels]`
         x_image = tf.reshape(x, [-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])
         tf.summary.image('input', x_image, max_outputs=LABEL_SIZE)
 
@@ -148,7 +155,7 @@ def main(_):
 
     # Define loss and optimizer
     # Returns:
-    # A 1-D `Tensor` of length `batch_size`
+    # A 1-D `Tensor` of length `TRAIN_BATCH_SIZE`
     # of the same type as `logits` with the softmax cross entropy loss.
     with tf.name_scope('loss'):
         cross_entropy = tf.reduce_mean(
@@ -178,7 +185,7 @@ def main(_):
 
         # Train
         for i in range(MAX_STEPS):
-            batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
+            batch_xs, batch_ys = train_data.next_batch(TRAIN_BATCH_SIZE)
 
             step_summary, _ = sess.run([merged, train_step], feed_dict={
                                        x: batch_xs, y_: batch_ys})
@@ -191,13 +198,18 @@ def main(_):
                 train_writer.add_summary(valid_summary, i)
 
                 # final check after looping
-                test_x, test_y = test_data.next_batch(2000)
-                test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
-                                                       x: test_x, y_: test_y})
-                test_writer.add_summary(test_summary, i)
+                sum_test_acc = 0
+                for j in range(TEST_STEPS):
+                    test_x, test_y = test_data.next_batch(TEST_BATCH_SIZE)
+                    test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
+                        x: test_x, y_: test_y})
+                    test_writer.add_summary(test_summary, i)
+                    sum_test_acc += test_accuracy
+
+                sum_test_acc /= TEST_STEPS
 
                 print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (
-                    i, train_accuracy * 100, test_accuracy * 100))
+                    i, train_accuracy * 100, sum_test_acc * 100))
 
         train_writer.close()
         test_writer.close()
@@ -207,10 +219,15 @@ def main(_):
         saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
 
         # final check after looping
-        test_x, test_y = test_data.next_batch(2000)
-        test_accuracy = accuracy.eval(
-            feed_dict={x: test_x, y_: test_y})
-        print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
+        sum_test_acc = 0
+        for j in range(TEST_STEPS):
+            test_x, test_y = test_data.next_batch(TEST_BATCH_SIZE)
+            test_accuracy = accuracy.eval(
+                feed_dict={x: test_x, y_: test_y})
+            sum_test_acc += test_accuracy
+
+        sum_test_acc /= TEST_STEPS
+        print('testing accuracy = %.2f%%' % (sum_test_acc * 100, ))
 
 
 if __name__ == '__main__':
