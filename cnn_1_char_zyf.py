@@ -50,19 +50,19 @@ def max_pool_2x2(x):
 
 def main(_):
     # load data
-    # meta, train_data, test_data = input_data.load_data(
-    #     FLAGS.data_dir, flatten=False)
-    # print('data loaded')
-    # print('train images: %s. test images: %s' %
-    #       (train_data.images.shape[0], test_data.images.shape[0]))
+    meta, train_data, test_data = input_data.load_data(
+        FLAGS.data_dir, flatten=False)
+    print('data loaded')
+    print('train images: %s. test images: %s' %
+          (train_data.images.shape[0], test_data.images.shape[0]))
 
-    # LABEL_SIZE = meta['label_size']
-    # IMAGE_HEIGHT = meta['height']
-    # IMAGE_WIDTH = meta['width']
+    LABEL_SIZE = meta['label_size']
+    IMAGE_HEIGHT = meta['height']
+    IMAGE_WIDTH = meta['width']
 
-    LABEL_SIZE = 62
-    IMAGE_HEIGHT = 40
-    IMAGE_WIDTH = 40
+    # LABEL_SIZE = 62
+    # IMAGE_HEIGHT = 40
+    # IMAGE_WIDTH = 40
     IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
     print('label_size: %s, image_size: %s' % (LABEL_SIZE, IMAGE_SIZE))
 
@@ -176,28 +176,28 @@ def main(_):
 
         tf.global_variables_initializer().run()
 
-        # # Train
-        # for i in range(MAX_STEPS):
-        #     batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
+        # Train
+        for i in range(MAX_STEPS):
+            batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
 
-        #     step_summary, _ = sess.run([merged, train_step], feed_dict={
-        #                                x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-        #     train_writer.add_summary(step_summary, i)
+            step_summary, _ = sess.run([merged, train_step], feed_dict={
+                                       x: batch_xs, y_: batch_ys})
+            train_writer.add_summary(step_summary, i)
 
-        #     if i % 100 == 0:
-        #         # Test trained model
-        #         valid_summary, train_accuracy = sess.run([merged, accuracy], feed_dict={
-        #                                                  x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-        #         train_writer.add_summary(valid_summary, i)
+            if i % 100 == 0:
+                # Test trained model
+                valid_summary, train_accuracy = sess.run([merged, accuracy], feed_dict={
+                                                         x: batch_xs, y_: batch_ys})
+                train_writer.add_summary(valid_summary, i)
 
-        #         # final check after looping
-        #         test_x, test_y = test_data.next_batch(2000)
-        #         test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
-        #                                                x: test_x, y_: test_y, keep_prob: 1.0})
-        #         test_writer.add_summary(test_summary, i)
+                # final check after looping
+                test_x, test_y = test_data.next_batch(2000)
+                test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
+                                                       x: test_x, y_: test_y})
+                test_writer.add_summary(test_summary, i)
 
-        #         print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (
-        #             i, train_accuracy * 100, test_accuracy * 100))
+                print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (
+                    i, train_accuracy * 100, test_accuracy * 100))
 
         train_writer.close()
         test_writer.close()
@@ -206,11 +206,11 @@ def main(_):
         # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
         saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
 
-        # # final check after looping
-        # test_x, test_y = test_data.next_batch(2000)
-        # test_accuracy = accuracy.eval(
-        #     feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
-        # print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
+        # final check after looping
+        test_x, test_y = test_data.next_batch(2000)
+        test_accuracy = accuracy.eval(
+            feed_dict={x: test_x, y_: test_y})
+        print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
 
 
 if __name__ == '__main__':
