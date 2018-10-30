@@ -233,7 +233,7 @@ def main(_):
 
         saver = tf.train.Saver()
         # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
-        saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
+        saver.save(sess, osp.join(LOG_DIR, './models-7-layers-zyf'))
 
         # final check after looping
         sum_test_acc = 0
