@@ -2,6 +2,8 @@
 import argparse
 import datetime
 import sys
+import os.path as osp
+
 import tensorflow as tf
 
 import datasets.base as input_data
@@ -48,15 +50,19 @@ def max_pool_2x2(x):
 
 def main(_):
     # load data
-    meta, train_data, test_data = input_data.load_data(
-        FLAGS.data_dir, flatten=False)
-    print('data loaded')
-    print('train images: %s. test images: %s' %
-          (train_data.images.shape[0], test_data.images.shape[0]))
+    # meta, train_data, test_data = input_data.load_data(
+    #     FLAGS.data_dir, flatten=False)
+    # print('data loaded')
+    # print('train images: %s. test images: %s' %
+    #       (train_data.images.shape[0], test_data.images.shape[0]))
 
-    LABEL_SIZE = meta['label_size']
-    IMAGE_HEIGHT = meta['height']
-    IMAGE_WIDTH = meta['width']
+    # LABEL_SIZE = meta['label_size']
+    # IMAGE_HEIGHT = meta['height']
+    # IMAGE_WIDTH = meta['width']
+
+    LABEL_SIZE = 62
+    IMAGE_HEIGHT = 40
+    IMAGE_WIDTH = 40
     IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
     print('label_size: %s, image_size: %s' % (LABEL_SIZE, IMAGE_SIZE))
 
@@ -96,14 +102,28 @@ def main(_):
         b_conv4 = bias_variable([256])
 
         h_conv4 = tf.nn.relu(conv2d(h_pool3, W_conv4) + b_conv4)
-        h_pool4 = max_pool_2x2(h_conv4)
+        # h_pool4 = max_pool_2x2(h_conv4)
+        h_pool4 = tf.nn.max_pool(h_conv4, ksize=[1, 5, 5, 1],
+                                 strides=[1, 1, 1, 1], padding='VALID')
 
-    with tf.name_scope('convolution-layer-5'):
-        W_conv5 = weight_variable([3, 3, 256, 512])
-        b_conv5 = bias_variable([512])
+    with tf.name_scope('readout'):
+        W_fc2 = weight_variable([256, LABEL_SIZE])
+        b_fc2 = bias_variable([LABEL_SIZE])
 
-        h_conv5 = tf.nn.relu(conv2d(h_pool4, W_conv5) + b_conv5)
-        h_pool5 = max_pool_2x2(h_conv5)
+        # pre_fc = tf.reshape(h_pool5, [-1, 512])
+        # h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+
+        pre_fc = tf.reshape(h_pool4, [-1, 256])
+        y_conv = tf.matmul(pre_fc, W_fc2) + b_fc2
+
+    # with tf.name_scope('convolution-layer-5'):
+        # W_conv5 = weight_variable([3, 3, 256, 512])
+        # b_conv5 = bias_variable([512])
+
+        # h_conv5 = tf.nn.relu(conv2d(h_pool4, W_conv5) + b_conv5)
+        # h_pool5 = max_pool_2x2(h_conv5)
+        # h_pool5 = tf.nn.max_pool(h_conv5, ksize=[1, 2, 2, 1],
+        #                          strides=[1, 2, 2, 1], padding='SAME')
 
     # with tf.name_scope('densely-connected'):
     #     W_fc1 = weight_variable([IMAGE_WIDTH * IMAGE_HEIGHT * 4, 1024])
@@ -118,14 +138,13 @@ def main(_):
     #     keep_prob = tf.placeholder(tf.float32)
     #     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-    with tf.name_scope('readout'):
-        W_fc2 = weight_variable([512, LABEL_SIZE])
-        b_fc2 = bias_variable([LABEL_SIZE])
+    # with tf.name_scope('readout'):
+    #     W_fc2 = weight_variable([512, LABEL_SIZE])
+    #     b_fc2 = bias_variable([LABEL_SIZE])
 
-        h_pool5_flat = tf.reshape(h_pool5, [-1, 512])
-        # h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    #     pre_fc = tf.reshape(h_pool5, [-1, 512])
 
-        y_conv = tf.matmul(h_pool5_flat, W_fc2) + b_fc2
+    #     y_conv = tf.matmul(pre_fc, W_fc2) + b_fc2
 
     # Define loss and optimizer
     # Returns:
@@ -157,37 +176,41 @@ def main(_):
 
         tf.global_variables_initializer().run()
 
-        # Train
-        for i in range(MAX_STEPS):
-            batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
+        # # Train
+        # for i in range(MAX_STEPS):
+        #     batch_xs, batch_ys = train_data.next_batch(BATCH_SIZE)
 
-            step_summary, _ = sess.run([merged, train_step], feed_dict={
-                                       x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-            train_writer.add_summary(step_summary, i)
+        #     step_summary, _ = sess.run([merged, train_step], feed_dict={
+        #                                x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+        #     train_writer.add_summary(step_summary, i)
 
-            if i % 100 == 0:
-                # Test trained model
-                valid_summary, train_accuracy = sess.run([merged, accuracy], feed_dict={
-                                                         x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-                train_writer.add_summary(valid_summary, i)
+        #     if i % 100 == 0:
+        #         # Test trained model
+        #         valid_summary, train_accuracy = sess.run([merged, accuracy], feed_dict={
+        #                                                  x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+        #         train_writer.add_summary(valid_summary, i)
 
-                # final check after looping
-                test_x, test_y = test_data.next_batch(2000)
-                test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
-                                                       x: test_x, y_: test_y, keep_prob: 1.0})
-                test_writer.add_summary(test_summary, i)
+        #         # final check after looping
+        #         test_x, test_y = test_data.next_batch(2000)
+        #         test_summary, test_accuracy = sess.run([merged, accuracy], feed_dict={
+        #                                                x: test_x, y_: test_y, keep_prob: 1.0})
+        #         test_writer.add_summary(test_summary, i)
 
-                print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (
-                    i, train_accuracy * 100, test_accuracy * 100))
+        #         print('step %s, training accuracy = %.2f%%, testing accuracy = %.2f%%' % (
+        #             i, train_accuracy * 100, test_accuracy * 100))
 
         train_writer.close()
         test_writer.close()
 
-        # final check after looping
-        test_x, test_y = test_data.next_batch(2000)
-        test_accuracy = accuracy.eval(
-            feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
-        print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
+        saver = tf.train.Saver()
+        # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
+        saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
+
+        # # final check after looping
+        # test_x, test_y = test_data.next_batch(2000)
+        # test_accuracy = accuracy.eval(
+        #     feed_dict={x: test_x, y_: test_y, keep_prob: 1.0})
+        # print('testing accuracy = %.2f%%' % (test_accuracy * 100, ))
 
 
 if __name__ == '__main__':
