@@ -16,8 +16,11 @@ FLAGS = None
 META_FILENAME = 'meta.json'
 
 fonts_dir = './fonts'
-fonts = os.listdir(fonts_dir)
-fonts = [osp.join(fonts_dir, f) for f in fonts]
+fn_list = os.listdir(fonts_dir)
+fonts = []
+for f in fn_list:
+    if f.endswith('.ttf'):
+        fonts.append(osp.join(fonts_dir, f))
 
 
 def get_choices():
