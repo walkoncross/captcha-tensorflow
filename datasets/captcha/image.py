@@ -36,7 +36,7 @@ for i in range(256):
 
 
 class _Captcha(object):
-    def generate(self, chars, format='png', noise_dots=True, noise_curve=True):
+    def generate(self, chars, format='png', noise_dots=True, noise_curve=True, rescale=1.0):
         """Generate an Image Captcha of the given characters.
 
         :param chars: text to be generated.
@@ -46,11 +46,15 @@ class _Captcha(object):
         """
         im = self.generate_image(chars, noise_dots, noise_curve)
         out = BytesIO()
+        if rescale != 1.0:
+            sz2 = im.size[0] / rescale, im.size[1] / rescale
+            im = im.resize(sz2, Image.ANTIALIAS)
+
         im.save(out, format=format)
         out.seek(0)
         return out
 
-    def write(self, chars, output, format='png', noise_dots=True, noise_curve=True):
+    def write(self, chars, output, format='png', noise_dots=True, noise_curve=True, rescale=1.0):
         """Generate and write an image CAPTCHA data to the output.
 
         :param chars: text to be generated.
@@ -60,6 +64,11 @@ class _Captcha(object):
         :param noise_curve: add noise curve or not (This param was added by zhaoyafei 20181104)
         """
         im = self.generate_image(chars, noise_dots, noise_curve)
+
+        if rescale != 1.0:
+            sz2 = im.size[0] / rescale, im.size[1] / rescale
+            im = im.resize(sz2, Image.ANTIALIAS)
+
         return im.save(output, format=format)
 
 

@@ -15,7 +15,7 @@ from PIL import Image
 FLAGS = None
 META_FILENAME = 'meta.json'
 
-fonts_dir = './fonts'
+fonts_dir = 'datasets/fonts'
 fn_list = os.listdir(fonts_dir)
 fonts = []
 for f in fn_list:
@@ -38,15 +38,21 @@ def _gen_captcha(img_dir, num_per_image, n, width, height, choices):
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
-    image = ImageCaptcha(width=width * 1.5, height=height * 1.5, fonts=fonts)
-    image = image.resize((width, height), Image.ANTIALIAS)
+    rescale = 1.5
+
+    font_sizes = [int(height * ss * rescale) for ss in [0.7, 0.8, 0.9]]
+    image = ImageCaptcha(width=width * rescale,
+                         height=height * rescale,
+                         fonts=fonts,
+                         font_sizes=font_sizes)
 
     print('generating %s epoches of captchas in %s' % (n, img_dir))
     for _ in range(n):
         for i in itertools.permutations(choices, num_per_image):
             captcha = ''.join(i)
             fn = os.path.join(img_dir, '%s_%s.png' % (captcha, uuid.uuid4()))
-            image.write(captcha, fn)
+            image.write(captcha, fn, noise_dots=False,
+                        noise_curve=False, rescale=rescale)
 
 
 def build_file_path(x):
