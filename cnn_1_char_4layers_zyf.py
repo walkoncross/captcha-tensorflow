@@ -214,9 +214,9 @@ def main(_):
         train_writer.close()
         test_writer.close()
 
-        saver = tf.train.Saver()
-        # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
-        saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
+        # saver = tf.train.Saver()
+        # # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
+        # saver.save(sess, osp.join(LOG_DIR, './models-4-layers-zyf'))
 
         # final check after looping
         sum_test_acc = 0
@@ -228,6 +228,12 @@ def main(_):
 
         sum_test_acc /= TEST_STEPS
         print('testing accuracy = %.2f%%' % (sum_test_acc * 100, ))
+
+        if i >= MAX_STEPS * 0.9 or sum_test_acc >= 0.95:
+            saver = tf.train.Saver()
+            # saver.save(sess, osp.join(LOG_DIR, './models-5-layers-zyf'))
+            saver.save(sess, osp.join(
+                LOG_DIR, './models-7-layers-zyf'), global_step=i)
 
 
 if __name__ == '__main__':
